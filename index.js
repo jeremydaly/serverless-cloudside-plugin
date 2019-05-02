@@ -149,6 +149,10 @@ class InvokeCloudside {
 
     this.serverless.cli.log(`Loading cloudside resources for '${stackName}' stack.`)
 
+    if (!this.serverless.service.provider.environment) {
+      this.serverless.service.provider.environment = {}
+    }
+
     this.serverless.service.provider.environment.IS_CLOUDSIDE = true
     this.serverless.service.provider.environment.CLOUDSIDE_STACK = stackName
 
