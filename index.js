@@ -125,8 +125,6 @@ class InvokeCloudside {
   }
 
   checkInstall(plugin) {
-    console.log(this.serverless.service);
-
     if (!this.serverless.service.plugins.includes(plugin)) {
       throw Error(`You must install "${plugin}" to use the "offline cloudside" feature.\n\n  You can install it by running "serverless plugin install --name ${plugin}"`)
     }
