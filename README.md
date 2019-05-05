@@ -6,7 +6,7 @@
 [![npm](https://img.shields.io/npm/v/serverless-cloudside-plugin.svg)](https://www.npmjs.com/package/serverless-cloudside-plugin)
 [![npm](https://img.shields.io/npm/l/serverless-cloudside-plugin.svg)](https://www.npmjs.com/package/serverless-cloudside-plugin)
 
-This plugin allows you to use AWS CloudFormation intrinsic functions (such as `!Ref` and `!GetAt`) to reference cloud resources during local development. When added to your `environment` variables, these values are replaced with the same identifiers used when deployed to the cloud. You can invoke your functions locally, use the `serverless-offline` plugin, or use a compatible test runner that uses the `serverless invoke test` command. You can now keep your `serverless.yml` files free from pseudo variables and other concatenated strings and simply use the built-in CloudFormation features.
+This plugin allows you to use AWS CloudFormation intrinsic functions (such as `!Ref` and `!GetAtt`) to reference cloud resources during local development. When added to your `environment` variables, these values are replaced with the same identifiers used when deployed to the cloud. You can invoke your functions locally, use the `serverless-offline` plugin, or use a compatible test runner that uses the `serverless invoke test` command. You can now keep your `serverless.yml` files free from pseudo variables and other concatenated strings and simply use the built-in CloudFormation features.
 
 ## Installation
 
@@ -31,7 +31,7 @@ plugins:
 
 ## Usage
 
-When executing your function locally, the `serverless-cloudside-plugin` will replace any environment variable that contains either a `!Ref` or a `!GetAt` that references a CloudFormation resource within your `serverless.yml` file.
+When executing your function locally, the `serverless-cloudside-plugin` will replace any environment variable that contains either a `!Ref` or a `!GetAtt` that references a CloudFormation resource within your `serverless.yml` file.
 
 In the example below, we are creating an SQS Queue named `myQueue` and referencing it (using a CloudFormation intrinsic function) in an environment variable named `QUEUE`.
 
