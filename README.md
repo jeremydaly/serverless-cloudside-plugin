@@ -31,7 +31,7 @@ plugins:
 
 ## Usage
 
-When executing your function locally, the `serverless-cloudside-plugin` will replace any environment variable that contains either a `!Ref` or a `!GetAtt` that references a CloudFormation resource within your `serverless.yml` file.
+When executing your function locally, the `serverless-cloudside-plugin` will replace any environment variable that contains either a `!Ref` or a `!GetAtt` that references a CloudFormation resource within your `serverless.yml` file, or a `!Fn::ImportValue` that references a CloudFormation resources that was exported by another stack.
 
 In the example below, we are creating an SQS Queue named `myQueue` and referencing it (using a CloudFormation intrinsic function) in an environment variable named `QUEUE`.
 
@@ -102,6 +102,8 @@ This plugin extends the `invoke test` command, so any test runner plugin that us
 This plugin currently supports the `!Ref` function that returns the `PhysicalResourceId` from CloudFormation. For most resources, this is the value you will need to interact with the corresponding service in the AWS SDK (e.g. `QueueUrl` for SQS, `TopicArn` for SNS, etc.).
 
 There is also initial (and limited) support for using `!GetAtt` to retrieve an **ARN**. For example, you may use `!GetAtt myQueue.Arn` to retrieve the ARN for `myQueue`. The plugin generates the ARN based on the service type. For supported types, it will return a properly formatted ARN. For others, it will replace the value with **"FUNCTION NOT SUPPORTED"**. In most cases, it should be possible to support generating an ARN for a resource, but the format will need to be added to the plugin.
+
+There now is also support for `Fn::ImportValue` to allow referencing exported resources from other CloudFormation stacks.
 
 ## Contributions
 Contributions, ideas and bug reports are welcome and greatly appreciated. Please add [issues](https://github.com/jeremydaly/serverless-cloudside-plugin/issues) for suggestions and bug reports or create a pull request.

@@ -132,7 +132,7 @@ class InvokeCloudside {
   }
 
   // Set environment variables for "invoke cloudside"
-  loadCloudsideEnvVars() {
+  async loadCloudsideEnvVars() {
 
     // Get the stage (use the cloudstage option first, then stage option, then provider)
     const stage = this.options.cloudStage ? this.options.cloudStage :
@@ -143,7 +143,7 @@ class InvokeCloudside {
     const stackName = this.options.stackName ? this.options.stackName :
       this.serverless.service.provider.stackName ?
         this.serverless.service.provider.stackName :
-          `${this.serverless.service.service}-${stage}`
+        `${this.serverless.service.service}-${stage}`
 
     this.serverless.cli.log(`Loading cloudside resources for '${stackName}' stack.`)
 
@@ -159,7 +159,7 @@ class InvokeCloudside {
 
     let functions = this.options.function ?
       { [this.options.function] : this.serverless.service.functions[this.options.function] }
-        : this.serverless.service.functions
+      : this.serverless.service.functions
 
     Object.keys(functions).map(fn => {
       if (this.serverless.service.functions[fn].environment) {
@@ -173,62 +173,23 @@ class InvokeCloudside {
     // If references need resolving, call CF
     if (Object.keys(cloudsideVars).length > 0) {
 
-      const options = { useCache: true }
+      const sdkOptions = { useCache: true }
+      await this.applyStackResources(cloudsideVars, stackName, sdkOptions);
+      await this.applyExports(cloudsideVars, sdkOptions);
 
-      return this.serverless.getProvider('aws')
-        .request('CloudFormation',
-          'describeStackResources',
-          { StackName: stackName },
-          options)
-      .then(res => {
-        if (res.StackResources) {
-          // Loop through the returned StackResources
-          for (let i = 0; i < res.StackResources.length; i++) {
-
-            let resource = cloudsideVars[res.StackResources[i].LogicalResourceId]
-
-            // If the logicial id exists, add the PhysicalResourceId to the ENV
-            if (resource) {
-              for (let j = 0; j < resource.length; j++) {
-
-                let value = resource[j].type == 'Ref' ? res.StackResources[i].PhysicalResourceId
-                  : buildCloudValue(res.StackResources[i],resource[j].type)
-
-                if (resource[j].fn) {
-                  this.serverless.service.functions[resource[j].fn].environment[
-                    resource[j].env
-                  ] = value
-                } else {
-                  this.serverless.service.provider.environment[
-                    resource[j].env
-                  ] = value
-                }
-
-              } // end for
-              // Remove the cloudside variable
-              delete(cloudsideVars[res.StackResources[i].LogicalResourceId])
-            } // end if
-          } // end for
-        } // end if StackResources
-
-        // Replace remaining variables with warning
-        Object.keys(cloudsideVars).map(x => {
-          for (let j = 0; j < cloudsideVars[x].length; j++) {
-            if (cloudsideVars[x][j].fn) {
-              this.serverless.service.functions[cloudsideVars[x][j].fn].environment[
-                cloudsideVars[x][j].env
+      // Replace remaining variables with warning
+      Object.keys(cloudsideVars).map(x => {
+        for (let j = 0; j < cloudsideVars[x].length; j++) {
+          if (cloudsideVars[x][j].fn) {
+            this.serverless.service.functions[cloudsideVars[x][j].fn].environment[
+              cloudsideVars[x][j].env
               ] = '<RESOURCE NOT PUBLISHED>'
-            } else {
-              this.serverless.service.provider.environment[
-                cloudsideVars[x][j].env
+          } else {
+            this.serverless.service.provider.environment[
+              cloudsideVars[x][j].env
               ] = '<RESOURCE NOT PUBLISHED>'
-            }
           }
-        })
-
-        return true
-      }).error(e => {
-        console.log(e)
+        }
       })
 
     } else {
@@ -236,8 +197,85 @@ class InvokeCloudside {
     }
   }
 
-}
+  async applyStackResources(cloudsideVars, stackName, sdkOptions) {
 
+    try {
+
+      const stackResources = (await this.serverless.getProvider('aws')
+          .request(
+            'CloudFormation',
+            'describeStackResources',
+            { StackName: stackName },
+            sdkOptions)
+      ).StackResources
+
+      if (stackResources) {
+        // Loop through the returned StackResources
+        for (let i = 0; i < stackResources.length; i++) {
+          let resource = cloudsideVars[stackResources[i].LogicalResourceId]
+
+          // If the logicial id exists, add the PhysicalResourceId to the ENV
+          if (resource) {
+            for (let j = 0; j < resource.length; j++) {
+
+              let value = resource[j].type == 'Ref' ? stackResources[i].PhysicalResourceId
+                : buildCloudValue(stackResources[i],resource[j].type)
+
+              if (resource[j].fn) {
+                this.serverless.service.functions[resource[j].fn].environment[
+                  resource[j].env
+                  ] = value
+              } else {
+                this.serverless.service.provider.environment[
+                  resource[j].env
+                  ] = value
+              }
+
+            } // end for
+            // Remove the cloudside variable
+            delete(cloudsideVars[stackResources[i].LogicalResourceId])
+          } // end if
+        } // end for
+      } // end if StackResources
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  async applyExports(cloudsideVars, sdkOptions) {
+
+    try {
+      const exports = (await this.serverless.getProvider('aws')
+        .request('CloudFormation', 'listExports', {}, sdkOptions)).Exports;
+
+      if (exports) {
+        for (let i = 0; i < exports.length; i++) {
+          let resource = cloudsideVars[exports[i].Name];
+          if (resource) {
+
+            for (let j = 0; j < resource.length; j++) {
+              let value = exports[i].Value;
+
+              if (resource[j].fn) {
+                this.serverless.service.functions[resource[j].fn].environment[
+                  resource[j].env
+                  ] = value
+              } else {
+                this.serverless.service.provider.environment[
+                  resource[j].env
+                  ] = value
+              }
+            }
+            delete(cloudsideVars[exports[i].Name])
+          }
+        }
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+}
 
 
 // Parse the environment variables and return formatted mappings
@@ -250,6 +288,9 @@ const parseEnvs = (envs = {},fn) => Object.keys(envs).reduce((vars,key) => {
   } else if (envs[key]['Fn::GetAtt']) {
     logicalId = envs[key]['Fn::GetAtt'][0]
     ref = { type: envs[key]['Fn::GetAtt'][1], env: key, fn }
+  } else if (envs[key]['Fn::ImportValue']) {
+    logicalId = envs[key]['Fn::ImportValue']
+    ref = { type: 'ImportValue', env: key, fn }
   } else {
     return vars
   }
