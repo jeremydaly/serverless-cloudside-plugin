@@ -193,57 +193,56 @@ class InvokeCloudside {
           options)
         .then(res => {
           if (res.StackResources) {
-            // Loop through the returned StackResources
-            for (let i = 0; i < res.StackResources.length; i++) {
+          // Loop through the returned StackResources
+          for (let i = 0; i < res.StackResources.length; i++) {
 
-              let resource = cloudsideVars[res.StackResources[i].LogicalResourceId]
+            let resource = cloudsideVars[res.StackResources[i].LogicalResourceId]
 
-              // If the logicial id exists, add the PhysicalResourceId to the ENV
-              if (resource) {
-                for (let j = 0; j < resource.length; j++) {
+            // If the logicial id exists, add the PhysicalResourceId to the ENV
+            if (resource) {
+              for (let j = 0; j < resource.length; j++) {
 
-                  let value = resource[j].type == 'Ref' ? res.StackResources[i].PhysicalResourceId
-                    : buildCloudValue(res.StackResources[i], resource[j].type)
-                  if (resource[j].authorizer) {
-                    this.serverless.service.provider.httpApi.authorizers[resource[j].authorizer][
-                      resource[j].env
-                    ] = value
-                  } else if (resource[j].fn) {
-                    this.serverless.service.functions[resource[j].fn].environment[
-                      resource[j].env
-                    ] = value
-                  } else {
-                    this.serverless.service.provider.environment[
-                      resource[j].env
-                    ] = value
-                  }
-
-                } // end for
-                // Remove the cloudside variable
-                delete (cloudsideVars[res.StackResources[i].LogicalResourceId])
-              } // end if
-            } // end for
-          } // end if StackResources
+                let value = resource[j].type == 'Ref' ? res.StackResources[i].PhysicalResourceId
+                  : buildCloudValue(res.StackResources[i], resource[j].type)
+                if (resource[j].authorizer) {
+                  this.serverless.service.provider.httpApi.authorizers[resource[j].authorizer][
+                    resource[j].env
+                  ] = value
+                } else if (resource[j].fn) {
+                  this.serverless.service.functions[resource[j].fn].environment[
+                    resource[j].env
+                  ] = value
+                } else {
+                  this.serverless.service.provider.environment[
+                    resource[j].env
+                  ] = value
+                }
+              } // end for
+              // Remove the cloudside variable
+              delete (cloudsideVars[res.StackResources[i].LogicalResourceId])
+            } // end if
+          } // end for
+        } // end if StackResources
 
           // Replace remaining variables with warning
-          Object.keys(cloudsideVars).map(x => {
-            for (let j = 0; j < cloudsideVars[x].length; j++) {
-              if (cloudsideVars[x][j].fn) {
-                this.serverless.service.functions[cloudsideVars[x][j].fn].environment[
-                  cloudsideVars[x][j].env
-                ] = '<RESOURCE NOT PUBLISHED>'
-              } else {
-                this.serverless.service.provider.environment[
-                  cloudsideVars[x][j].env
-                ] = '<RESOURCE NOT PUBLISHED>'
-              }
+        Object.keys(cloudsideVars).map(x => {
+          for (let j = 0; j < cloudsideVars[x].length; j++) {
+            if (cloudsideVars[x][j].fn) {
+              this.serverless.service.functions[cloudsideVars[x][j].fn].environment[
+                cloudsideVars[x][j].env
+              ] = '<RESOURCE NOT PUBLISHED>'
+            } else {
+              this.serverless.service.provider.environment[
+                cloudsideVars[x][j].env
+              ] = '<RESOURCE NOT PUBLISHED>'
             }
-          })
-
-          return true
-        }).error(e => {
-          console.log(e)
+          }
         })
+
+        return true
+      }).error(e => {
+        console.log(e)
+      })
 
     } else {
       return BbPromise.resolve()
@@ -256,7 +255,7 @@ class InvokeCloudside {
 
 // Parse the environment variables and return formatted mappings
 const parseEnvs = ({ envs = {}, fn, authorizer }) => Object.keys(envs).reduce((vars, key) => {
-  let logicalId, ref
+  let logicalId,ref
 
   if (envs[key].Ref) {
     logicalId = envs[key].Ref
@@ -272,13 +271,13 @@ const parseEnvs = ({ envs = {}, fn, authorizer }) => Object.keys(envs).reduce((v
     vars[logicalId].concat([ref]) : [ref]
 
   return vars
-}, {})
+},{})
 
 
 
 // Build the cloud value based on type
-const buildCloudValue = (resource, type) => {
-  switch (type) {
+const buildCloudValue = (resource,type) => {
+  switch(type) {
     case 'Arn':
       return generateArn(resource)
     case 'ProviderURL':
@@ -295,21 +294,21 @@ const generateProviderUrl = resource => {
 // TODO: add more service types or figure out a better way to do this
 const generateArn = resource => {
 
-  let stack = resource.StackId.split(':').slice(0, 5)
+  let stack = resource.StackId.split(':').slice(0,5)
   let resourceType = resource.ResourceType.split('::')
   let serviceType = resourceType[1].toLowerCase()
   stack[2] = serviceType
 
-  switch (serviceType) {
+  switch(serviceType) {
     case 'sqs':
       stack.push(resource.PhysicalResourceId.split('/').slice(-1))
       break
     case 'dynamodb':
     case 'kinesis':
-      stack.push(resourceType[2].toLowerCase() + '/' + resource.PhysicalResourceId)
+      stack.push(resourceType[2].toLowerCase()+'/'+resource.PhysicalResourceId)
       break
     case 's3':
-      stack.splice(3, 5, '', '')
+      stack.splice(3,5,'','')
       stack.push(resource.PhysicalResourceId)
       break
     default:
