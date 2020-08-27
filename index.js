@@ -193,10 +193,10 @@ class InvokeCloudside {
           options)
         .then(res => {
           if (res.StackResources) {
-          // Loop through the returned StackResources
-          for (let i = 0; i < res.StackResources.length; i++) {
+            // Loop through the returned StackResources
+            for (let i = 0; i < res.StackResources.length; i++) {
 
-            let resource = cloudsideVars[res.StackResources[i].LogicalResourceId]
+              let resource = cloudsideVars[res.StackResources[i].LogicalResourceId]
 
             // If the logicial id exists, add the PhysicalResourceId to the ENV
             if (resource) {
@@ -219,12 +219,12 @@ class InvokeCloudside {
                 }
               } // end for
               // Remove the cloudside variable
-              delete (cloudsideVars[res.StackResources[i].LogicalResourceId])
+              delete(cloudsideVars[res.StackResources[i].LogicalResourceId])
             } // end if
           } // end for
         } // end if StackResources
 
-          // Replace remaining variables with warning
+        // Replace remaining variables with warning
         Object.keys(cloudsideVars).map(x => {
           for (let j = 0; j < cloudsideVars[x].length; j++) {
             if (cloudsideVars[x][j].fn) {
