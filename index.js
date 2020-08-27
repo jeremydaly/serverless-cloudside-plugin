@@ -133,7 +133,6 @@ class InvokeCloudside {
 
   // Set environment variables for "invoke cloudside"
   loadCloudsideEnvVars() {
-    console.log('hellooo im LINKEEDDDD')
     // Get the stage (use the cloudstage option first, then stage option, then provider)
     const stage = this.options.cloudStage ? this.options.cloudStage :
       this.options.stage ? this.options.stage :
@@ -211,8 +210,11 @@ class InvokeCloudside {
 
                   let value = resource[j].type == 'Ref' ? res.StackResources[i].PhysicalResourceId
                     : buildCloudValue(res.StackResources[i], resource[j].type)
-
-                  if (resource[j].fn) {
+                  if (resource[j].authorizer) {
+                    this.serverless.service.provider.httpApi.authorizers[resource[j].authorizer][
+                      resource[j].env
+                    ] = value
+                  } else if (resource[j].fn) {
                     this.serverless.service.functions[resource[j].fn].environment[
                       resource[j].env
                     ] = value
@@ -285,11 +287,16 @@ const buildCloudValue = (resource, type) => {
   switch (type) {
     case 'Arn':
       return generateArn(resource)
+    case 'ProviderURL':
+      return generateProviderUrl(resource)
     default:
       return '<FUNCTION NOT SUPPORTED>'
   }
 }
 
+const generateProviderUrl = resource => {
+  return `https://cognito-idp.${resource.PhysicalResourceId.split('_')[0]}.amazonaws.com/${resource.PhysicalResourceId}`
+}
 // Generate the ARN based on service type
 // TODO: add more service types or figure out a better way to do this
 const generateArn = resource => {
