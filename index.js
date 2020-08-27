@@ -133,6 +133,7 @@ class InvokeCloudside {
 
   // Set environment variables for "invoke cloudside"
   loadCloudsideEnvVars() {
+
     // Get the stage (use the cloudstage option first, then stage option, then provider)
     const stage = this.options.cloudStage ? this.options.cloudStage :
       this.options.stage ? this.options.stage :
@@ -156,12 +157,6 @@ class InvokeCloudside {
     // Find all envs with CloudFormation Refs
     let cloudsideVars = parseEnvs({ envs: this.serverless.service.provider.environment })
 
-    // this.serverless.getProvider('aws')
-    //   .request('CloudFormation',
-    //     'describeStackResources',
-    //     { StackName: stackName })
-    //   .then(res => console.log(res));
-
     let authorizers = this.serverless.service.provider.httpApi ? this.serverless.service.provider.httpApi.authorizers : {};
 
     Object.keys(authorizers).forEach(authorizer => {
@@ -170,7 +165,6 @@ class InvokeCloudside {
         for (let key in vars) {
           cloudsideVars[key] = cloudsideVars[key] ? cloudsideVars[key].concat(vars[key]) : vars[key]
         }
-        console.log(cloudsideVars)
       }
     });
 
