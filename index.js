@@ -143,7 +143,7 @@ class InvokeCloudside {
     const stackName = this.options.stackName ? this.options.stackName :
       this.serverless.service.provider.stackName ?
         this.serverless.service.provider.stackName :
-          `${this.serverless.service.service}-${stage}`
+        `${this.serverless.service.service}-${stage}`
 
     this.serverless.cli.log(`Loading cloudside resources for '${stackName}' stack.`)
 
@@ -155,15 +155,26 @@ class InvokeCloudside {
     this.serverless.service.provider.environment.CLOUDSIDE_STACK = stackName
 
     // Find all envs with CloudFormation Refs
-    let cloudsideVars = parseEnvs(this.serverless.service.provider.environment)
+    let cloudsideVars = parseEnvs({ envs: this.serverless.service.provider.environment })
+
+    let authorizers = this.serverless.service.provider.httpApi ? this.serverless.service.provider.httpApi.authorizers : {};
+
+    Object.keys(authorizers).forEach(authorizer => {
+      if (this.serverless.service.provider.httpApi.authorizers[authorizer]) {
+        let vars = parseEnvs({ envs: this.serverless.service.provider.httpApi.authorizers[authorizer], authorizer });
+        for (let key in vars) {
+          cloudsideVars[key] = cloudsideVars[key] ? cloudsideVars[key].concat(vars[key]) : vars[key]
+        }
+      }
+    });
 
     let functions = this.options.function ?
-      { [this.options.function] : this.serverless.service.functions[this.options.function] }
-        : this.serverless.service.functions
+      { [this.options.function]: this.serverless.service.functions[this.options.function] }
+      : this.serverless.service.functions
 
     Object.keys(functions).map(fn => {
       if (this.serverless.service.functions[fn].environment) {
-        let vars = parseEnvs(this.serverless.service.functions[fn].environment,fn)
+        let vars = parseEnvs({ envs: this.serverless.service.functions[fn].environment, fn, authorizer })
         for (let key in vars) {
           cloudsideVars[key] = cloudsideVars[key] ? cloudsideVars[key].concat(vars[key]) : vars[key]
         }
@@ -193,8 +204,11 @@ class InvokeCloudside {
 
                 let value = resource[j].type == 'Ref' ? res.StackResources[i].PhysicalResourceId
                   : buildCloudValue(res.StackResources[i],resource[j].type)
-
-                if (resource[j].fn) {
+                if (resource[j].authorizer) {
+                  this.serverless.service.provider.httpApi.authorizers[resource[j].authorizer][
+                    resource[j].env
+                  ] = value
+                } else if (resource[j].fn) {
                   this.serverless.service.functions[resource[j].fn].environment[
                     resource[j].env
                   ] = value
@@ -203,7 +217,6 @@ class InvokeCloudside {
                     resource[j].env
                   ] = value
                 }
-
               } // end for
               // Remove the cloudside variable
               delete(cloudsideVars[res.StackResources[i].LogicalResourceId])
@@ -241,15 +254,15 @@ class InvokeCloudside {
 
 
 // Parse the environment variables and return formatted mappings
-const parseEnvs = (envs = {},fn) => Object.keys(envs).reduce((vars,key) => {
+const parseEnvs = ({ envs = {}, fn, authorizer }) => Object.keys(envs).reduce((vars, key) => {
   let logicalId,ref
 
   if (envs[key].Ref) {
     logicalId = envs[key].Ref
-    ref = { type: 'Ref', env: key, fn }
+    ref = { type: 'Ref', env: key, fn, authorizer }
   } else if (envs[key]['Fn::GetAtt']) {
     logicalId = envs[key]['Fn::GetAtt'][0]
-    ref = { type: envs[key]['Fn::GetAtt'][1], env: key, fn }
+    ref = { type: envs[key]['Fn::GetAtt'][1], env: key, fn, authorizer }
   } else {
     return vars
   }
@@ -267,11 +280,16 @@ const buildCloudValue = (resource,type) => {
   switch(type) {
     case 'Arn':
       return generateArn(resource)
+    case 'ProviderURL':
+      return generateProviderUrl(resource)
     default:
       return '<FUNCTION NOT SUPPORTED>'
   }
 }
 
+const generateProviderUrl = resource => {
+  return `https://cognito-idp.${resource.PhysicalResourceId.split('_')[0]}.amazonaws.com/${resource.PhysicalResourceId}`
+}
 // Generate the ARN based on service type
 // TODO: add more service types or figure out a better way to do this
 const generateArn = resource => {
