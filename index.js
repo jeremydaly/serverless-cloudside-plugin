@@ -191,19 +191,19 @@ class InvokeCloudside {
           'describeStackResources',
           { StackName: stackName },
           options)
-        .then(res => {
-          if (res.StackResources) {
-            // Loop through the returned StackResources
-            for (let i = 0; i < res.StackResources.length; i++) {
+      .then(res => {
+        if (res.StackResources) {
+          // Loop through the returned StackResources
+          for (let i = 0; i < res.StackResources.length; i++) {
 
-              let resource = cloudsideVars[res.StackResources[i].LogicalResourceId]
+            let resource = cloudsideVars[res.StackResources[i].LogicalResourceId]
 
             // If the logicial id exists, add the PhysicalResourceId to the ENV
             if (resource) {
               for (let j = 0; j < resource.length; j++) {
 
                 let value = resource[j].type == 'Ref' ? res.StackResources[i].PhysicalResourceId
-                  : buildCloudValue(res.StackResources[i], resource[j].type)
+                  : buildCloudValue(res.StackResources[i],resource[j].type)
                 if (resource[j].authorizer) {
                   this.serverless.service.provider.httpApi.authorizers[resource[j].authorizer][
                     resource[j].env
