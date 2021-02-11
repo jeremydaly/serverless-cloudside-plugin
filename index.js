@@ -227,7 +227,7 @@ class InvokeCloudside {
         })
 
         return true
-      }).error(e => {
+      }).catch(e => {
         console.log(e)
       })
 
