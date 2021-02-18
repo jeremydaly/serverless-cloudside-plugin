@@ -1,6 +1,6 @@
 {
   "name": "serverless-cloudside-plugin",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Serverless plugin for using cloudside resources during local development",
   "main": "index.js",
   "scripts": {
