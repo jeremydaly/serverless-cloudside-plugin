@@ -272,6 +272,17 @@ const buildCloudValue = (resource,type) => {
   }
 }
 
+const getRdsResourceType = resourceType => {
+  switch(resourceType) {
+    case 'dbcluster':
+      return 'cluster'
+    case 'dbinstance':
+      return 'db'
+    default:
+      return null
+  }
+}
+
 // Generate the ARN based on service type
 // TODO: add more service types or figure out a better way to do this
 const generateArn = resource => {
@@ -288,6 +299,17 @@ const generateArn = resource => {
     case 'dynamodb':
     case 'kinesis':
       stack.push(resourceType[2].toLowerCase()+'/'+resource.PhysicalResourceId)
+      break
+    case 'rds':
+      const rdsResourceType = getRdsResourceType(resourceType[2].toLowerCase())
+      if (!rdsResourceType) {
+        return '<RDS RESOURCE NOT SUPPORTED>'
+      }
+      stack.push(rdsResourceType)
+      stack.push(resource.PhysicalResourceId)
+      break
+    case 'secretsmanager':
+      stack = resource.PhysicalResourceId.split('-').slice(0, -1).join('-').split(':')
       break
     case 's3':
       stack.splice(3,5,'','')
