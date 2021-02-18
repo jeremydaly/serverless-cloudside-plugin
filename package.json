@@ -26,5 +26,8 @@
   "homepage": "https://github.com/jeremydaly/serverless-cloudside-plugin#readme",
   "dependencies": {
     "bluebird": "^3.5.4"
+  },
+  "peerDependencies": {
+    "serverless": "1.x || 2.x"
   }
 }
