@@ -21,41 +21,54 @@ class InvokeCloudside {
                 usage: 'Name of the function',
                 shortcut: 'f',
                 required: true,
+                type: 'string',
               },
               cloudStage: {
                 usage: 'Stage to use for cloudside resources',
                 shortcut: 'S',
+                type: 'string',
               },
               stackName: {
                 usage: 'CloudFormation stack to use for cloudside resources',
                 shortcut: 'y',
+                type: 'string',
               },
               path: {
                 usage: 'Path to JSON or YAML file holding input data',
                 shortcut: 'p',
+                type: 'string',
               },
               data: {
                 usage: 'input data',
                 shortcut: 'd',
+                type: 'string',
               },
               raw: {
                 usage: 'Flag to pass input data as a raw string',
+                type: 'string',
               },
               context: {
                 usage: 'Context of the service',
+                type: 'string',
                 shortcut: 'c',
               },
               contextPath: {
                 usage: 'Path to JSON or YAML file holding context data',
+                type: 'string',
                 shortcut: 'x',
               },
               env: {
                 usage: 'Override environment variables. e.g. --env VAR1=val1 --env VAR2=val2',
+                type: 'string',
                 shortcut: 'e',
               },
-              docker: { usage: 'Flag to turn on docker use for node/python/ruby/java' },
+              docker: {
+                usage: 'Flag to turn on docker use for node/python/ruby/java',
+                type: 'string'
+              },
               'docker-arg': {
                 usage: 'Arguments to docker run command. e.g. --docker-arg "-p 9229:9229"',
+                type: 'string',
               },
             },
 
@@ -73,10 +86,12 @@ class InvokeCloudside {
                   cloudStage: {
                     usage: 'Stage to use for cloudside resources',
                     shortcut: 'S',
+                    type: 'string',
                   },
                   stackName: {
                     usage: 'CloudFormation stack to use for cloudside resources',
                     shortcut: 'y',
+                    type: 'string',
                   }
                 }
               }
@@ -101,10 +116,12 @@ class InvokeCloudside {
               cloudStage: {
                 usage: 'Stage to use for cloudside resources',
                 shortcut: 'S',
+                type: 'string',
               },
               stackName: {
                 usage: 'CloudFormation stack to use for cloudside resources',
                 shortcut: 'y',
+                type: 'string',
               }
             }
           }
