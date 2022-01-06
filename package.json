@@ -28,7 +28,7 @@
     "bluebird": "^3.5.4"
   },
   "peerDependencies": {
-    "serverless": "1.x || 2.x"
+    "serverless": "1 || 2 || 3"
   },
   "files": [
     "index.js"
