@@ -258,8 +258,7 @@ class InvokeCloudside {
         return true
       }
 
-      this.getStackResources([], { StackName: stackName }, options).then(hander);
-
+      return this.getStackResources([], { StackName: stackName }, options).then(hander);
     } else {
       return BbPromise.resolve()
     }
