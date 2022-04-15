@@ -148,6 +148,23 @@ class InvokeCloudside {
     return BbPromise.resolve()
   }
 
+  getStackResources(result, params, options) {
+    return this.serverless.getProvider('aws')
+    .request('CloudFormation',
+      'listStackResources',
+      params,
+      options)
+    .then(res => {
+      result = [ ...result, ...res.StackResourceSummaries ]
+      if(res.NextToken) {
+        return this.getStackResources(result, { ...params, NextToken: res.NextToken }, options);
+      }
+      return result;
+    }).catch(e => {
+      console.log(e)
+    })
+  };
+
   // Set environment variables for "invoke cloudside"
   loadCloudsideEnvVars() {
 
@@ -192,24 +209,19 @@ class InvokeCloudside {
 
       const options = { useCache: true }
 
-      return this.serverless.getProvider('aws')
-        .request('CloudFormation',
-          'describeStackResources',
-          { StackName: stackName },
-          options)
-      .then(res => {
-        if (res.StackResources) {
+      const hander = (stackResources) => {
+        if (stackResources) {
           // Loop through the returned StackResources
-          for (let i = 0; i < res.StackResources.length; i++) {
+          for (let i = 0; i < stackResources.length; i++) {
 
-            let resource = cloudsideVars[res.StackResources[i].LogicalResourceId]
+            let resource = cloudsideVars[stackResources[i].LogicalResourceId]
 
             // If the logicial id exists, add the PhysicalResourceId to the ENV
             if (resource) {
               for (let j = 0; j < resource.length; j++) {
 
-                let value = resource[j].type == 'Ref' ? res.StackResources[i].PhysicalResourceId
-                  : buildCloudValue(res.StackResources[i],resource[j].type)
+                let value = resource[j].type == 'Ref' ? stackResources[i].PhysicalResourceId
+                  : buildCloudValue(stackResources[i],resource[j].type)
 
                 if (resource[j].fn) {
                   this.serverless.service.functions[resource[j].fn].environment[
@@ -223,7 +235,7 @@ class InvokeCloudside {
 
               } // end for
               // Remove the cloudside variable
-              delete(cloudsideVars[res.StackResources[i].LogicalResourceId])
+              delete(cloudsideVars[stackResources[i].LogicalResourceId])
             } // end if
           } // end for
         } // end if StackResources
@@ -244,18 +256,15 @@ class InvokeCloudside {
         })
 
         return true
-      }).catch(e => {
-        console.log(e)
-      })
+      }
+
+      this.getStackResources([], { StackName: stackName }, options).then(hander);
 
     } else {
       return BbPromise.resolve()
     }
   }
-
 }
-
-
 
 // Parse the environment variables and return formatted mappings
 const parseEnvs = (envs = {},fn) => Object.keys(envs).reduce((vars,key) => {
