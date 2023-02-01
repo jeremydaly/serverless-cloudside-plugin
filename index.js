@@ -118,6 +118,11 @@ class InvokeCloudside {
                 shortcut: 'S',
                 type: 'string',
               },
+              reloadHandler: {
+                usage: 'Enable serverless reload functionality',
+                shortcut: 'r',
+                type: 'boolean',
+              },
               stackName: {
                 usage: 'CloudFormation stack to use for cloudside resources',
                 shortcut: 'y',
