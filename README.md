@@ -11,6 +11,7 @@ This plugin allows you to use AWS CloudFormation intrinsic functions (such as `!
 ## Installation
 
 #### Install using Serverless plugin manager
+
 ```bash
 serverless plugin install --name serverless-cloudside-plugin
 ```
@@ -18,6 +19,7 @@ serverless plugin install --name serverless-cloudside-plugin
 #### Install using npm
 
 Install the module using npm:
+
 ```bash
 npm install serverless-cloudside-plugin --save-dev
 ```
@@ -48,7 +50,7 @@ resources:
       Type: AWS::SQS::Queue
       Properties:
         QueueName: ${self:service}-${self:provider.stage}-myQueue
-```      
+```
 
 If we deploy this to the cloud, our `!Ref myQueue` will be replaced with a `QueueUrl` (e.g. _https://sqs.us-east-1.amazonaws.com/1234567890/sample-service-dev-myQueue_). We can then use that when invoking the AWS SDK and working with our queue.
 However, if we were to invoke this function locally using `sls invoke local -f myFunction`, our `QUEUE` environment variable would return `[object Object]` instead of our `QueueUrl`. This is because the Serverless Framework is actually replacing our `!Ref` with: `{ "Ref": "myQueue" }`.
@@ -56,6 +58,7 @@ However, if we were to invoke this function locally using `sls invoke local -f m
 There are workarounds to this, typically involving using pseudo variables to construct our own URL. But this method is error prone and requires us to hardcode formats for the different service types. Using the `serverless-cloudside-plugin`, you can now use the simple reference format above, and always retrieve the correct `PhysicalResourceId` for the resource.
 
 #### Invoking a function locally
+
 Once the plugin is installed, you will have a new `invoke` option named `invoke cloudside`. Simply run this command with a function and it will resolve all of your cloud variables and then execute the standard `invoke local` command.
 
 ```bash
@@ -81,15 +84,23 @@ sls invoke cloudside -f myFunction --stackName someOtherStack-dev
 ```
 
 #### Using with the serverless-offline plugin
+
 The `serverless-offline` plugin is a great tool for testing your serverless APIs locally, but it has the same problem referencing CloudFormation resources. The `serverless-cloudside-plugin` lets you run `serverless-offline` with all of your cloud variables correctly replaced.
 
 ```bash
 sls offline cloudside
 ```
 
+To enable hot-reload when running the server, use the `--reloadHandler` flag:
+
+```bash
+sls offline cloudside --reloadHandler
+```
+
 The above command will start the API Gateway emulator and allow you to test your functions locally. The `--cloudStage` and `--stackName` options are supported as well as all of the `serverless-offline` options.
 
 #### Using with a test runner
+
 You can use this plugin with other test runner plugins such as `serverless-mocha-plugin`. This will make it easier to run integration tests (including in your CI/CD systems) before deploying. Simply run the following when invoking your tests:
 
 ```bash
@@ -99,9 +110,11 @@ sls invoke test cloudside -f myFunction
 This plugin extends the `invoke test` command, so any test runner plugin that uses that format should work correctly. All plugin options should remain available.
 
 ## Available Functions
+
 This plugin currently supports the `!Ref` function that returns the `PhysicalResourceId` from CloudFormation. For most resources, this is the value you will need to interact with the corresponding service in the AWS SDK (e.g. `QueueUrl` for SQS, `TopicArn` for SNS, etc.).
 
 There is also initial (and limited) support for using `!GetAtt` to retrieve an **ARN**. For example, you may use `!GetAtt myQueue.Arn` to retrieve the ARN for `myQueue`. The plugin generates the ARN based on the service type. For supported types, it will return a properly formatted ARN. For others, it will replace the value with **"FUNCTION NOT SUPPORTED"**. In most cases, it should be possible to support generating an ARN for a resource, but the format will need to be added to the plugin.
 
 ## Contributions
+
 Contributions, ideas and bug reports are welcome and greatly appreciated. Please add [issues](https://github.com/jeremydaly/serverless-cloudside-plugin/issues) for suggestions and bug reports or create a pull request.
